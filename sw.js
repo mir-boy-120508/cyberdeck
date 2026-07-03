@@ -2,6 +2,7 @@ const CACHE_NAME = 'sounddeck-cache-v1';
 const ASSETS = [
   'index.html',
   'logo.png',
+  'song.mo3',
 ];
 
 self.addEventListener('install', e => {
