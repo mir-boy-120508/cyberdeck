@@ -199,7 +199,7 @@
          <div class="playlist-layout-v06">
           <div class="pl-panel pl-panel-art">
             <div class="art-mega-wrapper">
-              <img src="jacket1.png" class="art-mega" id="panelCover" onerror="this.src='logo.png'">
+              <img src="logo.png" class="art-mega" id="panelCover" onerror="this.src='logo.png'">
             </div>
             <div class="art-title" id="panelTitle">---</div>
             <div class="art-artist" id="panelArtist">---</div>
@@ -220,7 +220,7 @@
 
     <div class="hotbar">
       <div class="hb-left">
-        <img src="jacket1.png" class="hb-art" id="barCover" onerror="this.src='logo.png'">
+        <img src="logo.png" class="hb-art" id="barCover" onerror="this.src='logo.png'">
         <div>
           <div class="hb-title" id="barTitle">---</div>
           <div class="hb-artist" id="barArtist">---</div>
@@ -229,15 +229,15 @@
 
       <div class="hb-center">
         <div class="hb-controls">
-          <button class="ctrl-btn"><i class="fa-solid fa-shuffle"></i></button>
-          <button class="ctrl-btn"><i class="fa-solid fa-backward-step"></i></button>
+          <button class="ctrl-btn" id="btnShuffle"><i class="fa-solid fa-shuffle"></i></button>
+          <button class="ctrl-btn" id="btnPrev"><i class="fa-solid fa-backward-step"></i></button>
           <button class="ctrl-btn btn-play" id="btnPlay"><i class="fa-solid fa-circle-play"></i></button>
-          <button class="ctrl-btn"><i class="fa-solid fa-forward-step"></i></button>
-          <button class="ctrl-btn"><i class="fa-solid fa-repeat"></i></button>
+          <button class="ctrl-btn" id="btnNext"><i class="fa-solid fa-forward-step"></i></button>
+          <button class="ctrl-btn" id="btnRepeat"><i class="fa-solid fa-repeat"></i></button>
         </div>
         <div class="hb-progress">
           <span id="timeCurrent">0:00</span>
-          <input type="range" id="progressSlider" class="slider" min="0" value="0">
+          <input type="range" id="progressSlider" class="slider" min="0" value="0" step="0.1">
           <span id="timeDuration">0:00</span>
         </div>
       </div>
@@ -254,17 +254,22 @@
   <audio id="mainAudio"></audio>
 
   <script>
-    // ※元のロジック（再生、タブ切り替え、パスワード認証など）をそのまま完全に引き継ぎ
     let isPlaying = false;
     let currentTrackIndex = 0;
+    
+    // 楽曲データベース（必要に応じて元の曲データを追加してください）
     let songs = [
       { id: 0, title: "いつもそばで", artist: "むらたしょうり", src: "song.mp3", cover: "logo.png", lines: [{time:0, text:"この曲はサンプルです♪"}] },
     ];
 
+    const audio = document.getElementById('mainAudio');
     const authModal = document.getElementById('authModal');
     const btnAuthSubmit = document.getElementById('btnAuthSubmit');
     const appWrap = document.getElementById('appWrap');
+    const btnPlay = document.getElementById('btnPlay');
+    const progressSlider = document.getElementById('progressSlider');
 
+    // 認証ボタン
     btnAuthSubmit.addEventListener('click', () => {
       authModal.style.display = 'none';
       appWrap.style.display = 'flex';
@@ -276,6 +281,7 @@
       selectTrack(0);
     }
 
+    // タブ切り替え
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -285,8 +291,9 @@
       });
     });
 
+    // リストの描画
     function renderTrackLists() {
-      document.getElementById('homeQuickGrid').innerHTML = songs.map((song, idx) => `
+      const htmlContent = songs.map((song, idx) => `
         <div class="card" onclick="selectTrack(${idx})">
           <img src="${song.cover}" class="card-img" onerror="this.src='logo.png'">
           <div>
@@ -295,6 +302,9 @@
           </div>
         </div>
       `).join('');
+      
+      document.getElementById('homeQuickGrid').innerHTML = htmlContent;
+      document.getElementById('homeRankGrid').innerHTML = htmlContent; // 注目の楽曲にも描画
 
       document.getElementById('trackList').innerHTML = songs.map((song, idx) => `
         <div class="track-row" id="track-row-${idx}" onclick="selectTrack(${idx})">
@@ -308,18 +318,108 @@
       `).join('');
     }
 
+    // 曲の選択処理【重要：音声ファイルのセット処理を復元】
     function selectTrack(index) {
+      if (index < 0 || index >= songs.length) return;
       currentTrackIndex = index;
       const song = songs[index];
+      
+      // テキスト表示の更新
       document.getElementById('barTitle').innerText = song.title;
       document.getElementById('barArtist').innerText = song.artist;
+      document.getElementById('barCover').src = song.cover;
       document.getElementById('panelTitle').innerText = song.title;
       document.getElementById('panelArtist').innerText = song.artist;
+      document.getElementById('panelCover').src = song.cover;
       
+      // アクティブクラスの切り替え
       document.querySelectorAll('.track-row').forEach(r => r.classList.remove('active'));
       const row = document.getElementById(`track-row-${index}`);
       if(row) row.classList.add('active');
+
+      // オーディオソースの設定
+      audio.src = song.src;
+
+      // 歌詞の描画
+      const lyricsBox = document.getElementById('lyricsBox');
+      if (lyricsBox && song.lines) {
+        lyricsBox.innerHTML = song.lines.map((line, lIdx) => `
+          <div class="l-line" id="line-${lIdx}">${line.text}</div>
+        `).join('');
+      }
+
+      // 再生中なら自動で次の曲を流す
+      if (isPlaying) {
+        audio.play().catch(e => console.log("Playback error:", e));
+      }
     }
+
+    // 再生・一時停止ボタンの制御【完全復元】
+    btnPlay.addEventListener('click', () => {
+      if (isPlaying) {
+        audio.pause();
+        btnPlay.innerHTML = '<i class="fa-solid fa-circle-play"></i>';
+      } else {
+        audio.play().catch(e => console.log("Playback error:", e));
+        btnPlay.innerHTML = '<i class="fa-solid fa-circle-pause"></i>';
+      }
+      isPlaying = !isPlaying;
+    });
+
+    // 再生時間の更新とシークバーの連動【完全復元】
+    audio.addEventListener('timeupdate', () => {
+      const currentText = document.getElementById('timeCurrent');
+      const durationText = document.getElementById('timeDuration');
+      
+      if (audio.duration) {
+        progressSlider.max = audio.duration;
+        progressSlider.value = audio.currentTime;
+        
+        let cMin = Math.floor(audio.currentTime / 60);
+        let cSec = Math.floor(audio.currentTime % 60);
+        currentText.innerText = `${cMin}:${String(cSec).padStart(2, '0')}`;
+        
+        let dMin = Math.floor(audio.duration / 60);
+        let dSec = Math.floor(audio.duration % 60);
+        durationText.innerText = `${dMin}:${String(dSec).padStart(2, '0')}`;
+
+        // 歌詞の簡易アクティブ化ロジック
+        if (songs[currentTrackIndex].lines) {
+          songs[currentTrackIndex].lines.forEach((line, idx) => {
+            if (audio.currentTime >= line.time) {
+              document.querySelectorAll('.l-line').forEach(l => l.classList.remove('active'));
+              const activeLine = document.getElementById(`line-${idx}`);
+              if (activeLine) activeLine.classList.add('active');
+            }
+          });
+        }
+      }
+    });
+
+    // シークバーを直接手動で動かしたときの処理【完全復元】
+    progressSlider.addEventListener('input', (e) => {
+      audio.currentTime = e.target.value;
+    });
+
+    // 前後の曲へのスキップ
+    document.getElementById('btnPrev').addEventListener('click', () => {
+      let nextIdx = currentTrackIndex - 1;
+      if (nextIdx < 0) nextIdx = songs.length - 1;
+      selectTrack(nextIdx);
+    });
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      let nextIdx = currentTrackIndex + 1;
+      if (nextIdx >= songs.length) nextIdx = 0;
+      selectTrack(nextIdx);
+    });
+
+    // 曲が終わったら自動で次へ
+    audio.addEventListener('ended', () => {
+      let nextIdx = currentTrackIndex + 1;
+      if (nextIdx >= songs.length) nextIdx = 0;
+      selectTrack(nextIdx);
+    });
   </script>
 </body>
 </html>
