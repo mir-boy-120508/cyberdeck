@@ -385,17 +385,10 @@
     let currentTrackIndex = 0;
     let userSession = "default_user";
 
-    // 楽曲データベース (※元のコードから引き継ぎ)
     let songs = [
-      { id: 0, title: "ロマンティック", artist: "いきものがかり", src: "song1.mp3", cover: "jacket1.png", lines: [
-        { time: 0.0, text: "🎵 (イントロ)" },
-        { time: 2.0, text: "ロマンティック 恋のアンテナは" }
+      { id: 0, title: "いつもそばで", artist: "村田祥理", src: "song1.mp3", cover: "jacket1.png", lines: [
+        { time: 0.0, text: "※この曲はサンプルデータです" },
       ]},
-      { id: 1, title: "AM11:00", artist: "HY", src: "song2.mp3", cover: "jacket2.png", lines: [
-        { time: 0.0, text: "🎵 (イントロ)" },
-        { time: 4.0, text: "『目を覚ましてよ』君の声が" }
-      ]}
-      // ※ 必要に応じて元の全ての楽曲データをここにそのまま貼り付けてください
     ];
 
     // --- SoundDeckと全く同じイベントリスナーや再生ロジック（省略せずに元のロジックを配置） ---
